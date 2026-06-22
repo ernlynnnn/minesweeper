@@ -153,25 +153,31 @@ function revealCell(cell) {
 
   playTone(360, 0.025, "sine", 0.018);
 
-  if (isFirstClick) {
-    showFirstClickHints(cell);
-  }
+  refreshHints();
 
   checkWin();
 }
 
-function showFirstClickHints(firstCell) {
-  getNeighbors(firstCell).forEach((neighbor) => {
-    neighbor.element.classList.add(
-      neighbor.isMine ? "cell--hint-mine" : "cell--hint-safe",
-    );
+function refreshHints() {
+  cells.flat().forEach((cell) => {
+    cell.element.classList.remove("cell--hint-safe", "cell--hint-mine");
+  });
 
-    neighbor.element.setAttribute(
-      "aria-label",
-      `Row ${neighbor.row + 1}, column ${neighbor.col + 1}, ${
-        neighbor.isMine ? "mine hint" : "safe hint"
-      }`,
-    );
+  cells.flat().filter((cell) => cell.isRevealed).forEach((revealedCell) => {
+    getNeighbors(revealedCell).forEach((neighbor) => {
+      if (neighbor.isRevealed || neighbor.isFlagged) return;
+
+      neighbor.element.classList.add(
+        neighbor.isMine ? "cell--hint-mine" : "cell--hint-safe",
+      );
+
+      neighbor.element.setAttribute(
+        "aria-label",
+        `Row ${neighbor.row + 1}, column ${neighbor.col + 1}, ${
+          neighbor.isMine ? "mine hint" : "safe hint"
+        }`,
+      );
+    });
   });
 }
 
@@ -199,6 +205,7 @@ function toggleFlag(cell) {
   cell.isFlagged = !cell.isFlagged;
   flaggedCount += cell.isFlagged ? 1 : -1;
   renderCell(cell);
+  if (minesPlaced) refreshHints();
   updateCounters();
   playTone(cell.isFlagged ? 620 : 420, 0.04, "square", 0.018);
 }
