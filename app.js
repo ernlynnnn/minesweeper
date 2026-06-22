@@ -92,10 +92,7 @@ function getNeighbors(cell) {
 }
 
 function placeMines(safeCell) {
-  const protectedCells = new Set([
-    safeCell,
-    ...getNeighbors(safeCell),
-  ]);
+  const protectedCells = new Set([safeCell]);
   const candidates = cells.flat().filter((cell) => !protectedCells.has(cell));
 
   for (let i = candidates.length - 1; i > 0; i -= 1) {
@@ -119,11 +116,13 @@ function revealCell(cell) {
     return;
   }
 
-  if (!minesPlaced) {
+  const isFirstClick = !minesPlaced;
+
+  if (isFirstClick) {
     placeMines(cell);
     gameState = "playing";
     startTimer();
-    messageElement.textContent = "The clock is ticking. Stay sharp.";
+    messageElement.textContent = "Green cells are safe. Red cells contain mines.";
   }
 
   if (cell.isMine) {
@@ -153,7 +152,27 @@ function revealCell(cell) {
   }
 
   playTone(360, 0.025, "sine", 0.018);
+
+  if (isFirstClick) {
+    showFirstClickHints(cell);
+  }
+
   checkWin();
+}
+
+function showFirstClickHints(firstCell) {
+  getNeighbors(firstCell).forEach((neighbor) => {
+    neighbor.element.classList.add(
+      neighbor.isMine ? "cell--hint-mine" : "cell--hint-safe",
+    );
+
+    neighbor.element.setAttribute(
+      "aria-label",
+      `Row ${neighbor.row + 1}, column ${neighbor.col + 1}, ${
+        neighbor.isMine ? "mine hint" : "safe hint"
+      }`,
+    );
+  });
 }
 
 function chordCell(cell) {

@@ -237,6 +237,20 @@ h1 span {
   cursor: default;
 }
 
+.cell--hint-safe,
+.cell--hint-safe:hover:not(.cell--revealed) {
+  border-color: #76d978;
+  background: rgba(71, 181, 86, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(142, 255, 148, 0.16);
+}
+
+.cell--hint-mine,
+.cell--hint-mine:hover:not(.cell--revealed) {
+  border-color: #ff625f;
+  background: rgba(255, 71, 68, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 132, 129, 0.18);
+}
+
 .cell--flagged {
   color: var(--accent);
   border-color: rgba(199, 255, 69, 0.4);
