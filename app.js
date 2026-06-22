@@ -1,6 +1,7 @@
 const COLS = 30;
 const ROWS = 16;
 const MINE_COUNT = 99;
+const EXTERNAL_SOLVER_MODE = new URLSearchParams(window.location.search).has("external-solver");
 
 const boardElement = document.querySelector("#board");
 const mineCounterElement = document.querySelector("#mine-counter");
@@ -55,7 +56,8 @@ function startGame() {
       const cell = createCell(row, col);
       const button = document.createElement("button");
 
-      button.className = "cell";
+      button.className = "cell size24 hdd_closed";
+      button.id = `cell_${col}_${row}`;
       button.type = "button";
       button.setAttribute("role", "gridcell");
       button.setAttribute("aria-label", `Row ${row + 1}, column ${col + 1}, hidden`);
@@ -72,7 +74,9 @@ function startGame() {
   boardElement.append(fragment);
   updateCounters();
   faceElement.textContent = "🙂";
-  messageElement.textContent = "Clear the field without touching a mine.";
+  messageElement.textContent = EXTERNAL_SOLVER_MODE
+    ? "External solver mode: make the first click."
+    : "Clear the field without touching a mine.";
   messageElement.className = "";
 }
 
@@ -161,7 +165,7 @@ function revealCell(cell) {
 
   checkWin();
 
-  if (isFirstClick && gameState === "playing") {
+  if (isFirstClick && gameState === "playing" && !EXTERNAL_SOLVER_MODE) {
     void autoSolve(autoSolveRun);
   }
 }
@@ -199,6 +203,31 @@ async function autoSolve(runId) {
   await wait(350);
 
   while (runId === autoSolveRun && gameState === "playing") {
+    const chordTarget = cells.flat()
+      .map((cell) => {
+        if (!cell.isRevealed || cell.adjacentMines === 0) return null;
+
+        const neighbors = getNeighbors(cell);
+        const adjacentFlags = neighbors.filter((neighbor) => neighbor.isFlagged).length;
+        const hiddenCount = neighbors.filter(
+          (neighbor) => !neighbor.isRevealed && !neighbor.isFlagged,
+        ).length;
+
+        if (adjacentFlags !== cell.adjacentMines || hiddenCount === 0) return null;
+        return { cell, hiddenCount };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.hiddenCount - a.hiddenCount)[0]?.cell;
+
+    if (chordTarget) {
+      chordTarget.element.classList.add("cell--auto-click");
+      await wait(90);
+      if (runId !== autoSolveRun || gameState !== "playing") break;
+      chordCell(chordTarget);
+      chordTarget.element.classList.remove("cell--auto-click");
+      continue;
+    }
+
     const mineHint = cells.flat().find(
       (cell) => !cell.isFlagged && cell.element.classList.contains("cell--hint-mine"),
     );
@@ -262,17 +291,18 @@ function toggleFlag(cell) {
 
 function renderCell(cell) {
   const element = cell.element;
-  element.className = "cell";
+  element.className = "cell size24";
   element.removeAttribute("data-count");
   element.textContent = "";
 
   if (cell.isRevealed) {
-    element.classList.add("cell--revealed");
+    element.classList.add("cell--revealed", "hdd_opened");
 
     if (cell.isMine) {
-      element.classList.add("cell--mine");
+      element.classList.add("cell--mine", "hdd_type10");
       element.setAttribute("aria-label", `Row ${cell.row + 1}, column ${cell.col + 1}, mine`);
     } else if (cell.adjacentMines > 0) {
+      element.classList.add(`hdd_type${cell.adjacentMines}`);
       element.textContent = cell.adjacentMines;
       element.dataset.count = cell.adjacentMines;
       element.setAttribute(
@@ -280,12 +310,14 @@ function renderCell(cell) {
         `Row ${cell.row + 1}, column ${cell.col + 1}, ${cell.adjacentMines} adjacent mines`,
       );
     } else {
+      element.classList.add("hdd_type0");
       element.setAttribute("aria-label", `Row ${cell.row + 1}, column ${cell.col + 1}, empty`);
     }
   } else if (cell.isFlagged) {
-    element.classList.add("cell--flagged");
+    element.classList.add("cell--flagged", "hdd_flag");
     element.setAttribute("aria-label", `Row ${cell.row + 1}, column ${cell.col + 1}, flagged`);
   } else {
+    element.classList.add("hdd_closed");
     element.setAttribute("aria-label", `Row ${cell.row + 1}, column ${cell.col + 1}, hidden`);
   }
 }
