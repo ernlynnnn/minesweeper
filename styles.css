@@ -255,6 +255,12 @@ h1 span {
   box-shadow: none;
 }
 
+.cell--auto-click {
+  outline: 3px solid #ffff00;
+  outline-offset: -3px;
+  filter: brightness(1.15);
+}
+
 .cell--flagged {
   color: #ff0000;
   border-color: #ffffff;

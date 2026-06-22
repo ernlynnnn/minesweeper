@@ -19,6 +19,8 @@ let seconds = 0;
 let timerId = null;
 let soundEnabled = true;
 let audioContext = null;
+let autoSolving = false;
+let autoSolveRun = 0;
 
 function createCell(row, col) {
   return {
@@ -34,6 +36,8 @@ function createCell(row, col) {
 
 function startGame() {
   stopTimer();
+  autoSolveRun += 1;
+  autoSolving = false;
   cells = [];
   gameState = "ready";
   minesPlaced = false;
@@ -151,11 +155,15 @@ function revealCell(cell) {
     }
   }
 
-  playTone(360, 0.025, "sine", 0.018);
+  playTone(360, 0.04, "sine", 0.12);
 
   refreshHints();
 
   checkWin();
+
+  if (isFirstClick && gameState === "playing") {
+    void autoSolve(autoSolveRun);
+  }
 }
 
 function refreshHints() {
@@ -179,6 +187,48 @@ function refreshHints() {
       );
     });
   });
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+async function autoSolve(runId) {
+  autoSolving = true;
+  messageElement.textContent = "Auto-player started...";
+  await wait(350);
+
+  while (runId === autoSolveRun && gameState === "playing") {
+    const mineHint = cells.flat().find(
+      (cell) => !cell.isFlagged && cell.element.classList.contains("cell--hint-mine"),
+    );
+
+    if (mineHint) {
+      mineHint.element.classList.add("cell--auto-click");
+      await wait(70);
+      if (runId !== autoSolveRun || gameState !== "playing") break;
+      toggleFlag(mineHint);
+      continue;
+    }
+
+    const safeHint = cells.flat().find(
+      (cell) => !cell.isRevealed && cell.element.classList.contains("cell--hint-safe"),
+    );
+
+    if (safeHint) {
+      safeHint.element.classList.add("cell--auto-click");
+      await wait(70);
+      if (runId !== autoSolveRun || gameState !== "playing") break;
+      revealCell(safeHint);
+      continue;
+    }
+
+    break;
+  }
+
+  if (runId === autoSolveRun) {
+    autoSolving = false;
+  }
 }
 
 function chordCell(cell) {
@@ -207,7 +257,7 @@ function toggleFlag(cell) {
   renderCell(cell);
   if (minesPlaced) refreshHints();
   updateCounters();
-  playTone(cell.isFlagged ? 620 : 420, 0.04, "square", 0.018);
+  playTone(cell.isFlagged ? 620 : 420, 0.05, "square", 0.1);
 }
 
 function renderCell(cell) {
@@ -309,7 +359,7 @@ function getAudioContext() {
   return audioContext;
 }
 
-function playTone(frequency, duration, type = "sine", volume = 0.025, delay = 0) {
+function playTone(frequency, duration, type = "sine", volume = 0.12, delay = 0) {
   const context = getAudioContext();
   if (!context) return;
 
@@ -329,19 +379,19 @@ function playTone(frequency, duration, type = "sine", volume = 0.025, delay = 0)
 
 function playWinSound() {
   [440, 554, 659, 880].forEach((frequency, index) => {
-    playTone(frequency, 0.18, "sine", 0.035, index * 0.09);
+    playTone(frequency, 0.18, "sine", 0.16, index * 0.09);
   });
 }
 
 function playLossSound() {
   [180, 140, 95].forEach((frequency, index) => {
-    playTone(frequency, 0.22, "sawtooth", 0.025, index * 0.1);
+    playTone(frequency, 0.22, "sawtooth", 0.12, index * 0.1);
   });
 }
 
 boardElement.addEventListener("click", (event) => {
   const element = event.target.closest(".cell");
-  if (!element) return;
+  if (!element || autoSolving) return;
   const cell = getCell(Number(element.dataset.row), Number(element.dataset.col));
 
   if (cell.isRevealed) {
@@ -355,6 +405,7 @@ boardElement.addEventListener("contextmenu", (event) => {
   const element = event.target.closest(".cell");
   if (!element) return;
   event.preventDefault();
+  if (autoSolving) return;
   const cell = getCell(Number(element.dataset.row), Number(element.dataset.col));
   toggleFlag(cell);
 });
@@ -372,7 +423,7 @@ window.addEventListener("pointerup", () => {
 });
 
 resetButton.addEventListener("click", () => {
-  playTone(520, 0.05, "sine", 0.025);
+  playTone(520, 0.06, "sine", 0.12);
   startGame();
 });
 
@@ -380,7 +431,7 @@ soundToggle.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   soundToggle.setAttribute("aria-pressed", String(soundEnabled));
   soundToggle.querySelector("span:last-child").textContent = soundEnabled ? "Sound on" : "Sound off";
-  if (soundEnabled) playTone(620, 0.06, "sine", 0.025);
+  if (soundEnabled) playTone(620, 0.07, "sine", 0.12);
 });
 
 startGame();
