@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A polished expert Minesweeper game with a 30 by 16 board and 99 mines."
+    />
+    <title>minesweeper</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <div>
+          <h1>minesweeper</h1>
+          <p class="subtitle">size: 30x16 · mines: 99</p>
+        </div>
+
+        <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true">
+          <span class="sound-icon" aria-hidden="true">◖</span>
+          <span>Sound on</span>
+        </button>
+      </header>
+
+      <section class="game-card" aria-label="Minesweeper game">
+        <div class="status-bar">
+          <div class="counter-block">
+            <span class="counter-label">Mines</span>
+            <strong class="counter-value" id="mine-counter">099</strong>
+          </div>
+
+          <button class="reset-button" id="reset-button" type="button" aria-label="Start a new game">
+            <span id="face" aria-hidden="true">🙂</span>
+          </button>
+
+          <div class="counter-block counter-block--right">
+            <span class="counter-label">Time</span>
+            <strong class="counter-value" id="timer">000</strong>
+          </div>
+        </div>
+
+        <div class="board-frame">
+          <div
+            class="board"
+            id="board"
+            role="grid"
+            aria-label="Expert Minesweeper board, 30 columns by 16 rows"
+          ></div>
+        </div>
+
+        <div class="game-footer">
+          <p id="game-message" aria-live="polite">Clear the field without touching a mine.</p>
+          <div class="legend" aria-label="Controls">
+            <span><i class="mouse mouse--left"></i> Reveal</span>
+            <span><i class="mouse mouse--right"></i> Flag</span>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <span>First click is always safe.</span>
+        <span class="footer-mark">Think carefully. Click bravely.</span>
+      </footer>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
